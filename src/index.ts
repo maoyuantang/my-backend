@@ -1,6 +1,18 @@
 // src/index.ts
 import express, { Request, Response } from 'express';
 
+type User = {
+  id: number;
+  name: string;
+  email: string;
+};
+
+let users: User[] = [
+  { id: 1, name: '小明', email: 'xiaoming@example.com' },
+  { id: 2, name: '小红', email: 'xiaohong@example.com' }
+];
+let nextId = 3;
+
 const app = express();
 const port = 3000;
 
@@ -22,6 +34,52 @@ app.post('/users', (req: Request, res: Response) => {
     message: `用户 ${name} 已创建（模拟）`,
     data: { name, email }
   });
+});
+
+// GET /users 接口：模拟查询所有用户（新增）
+app.get('/users', (req: Request, res: Response) => {
+  res.json({
+    success: true,
+    data: [
+      { id: 1, name: '小明', email: 'xiaoming@example.com' },
+      { id: 2, name: '小红', email: 'xiaohong@example.com' }
+    ]
+  });
+});
+
+// 更新用户
+app.put('/users/:id', (req: Request, res: Response) => {
+  const id = req.params.id;
+  // 先提取出确定的字符串值
+  const idStr = Array.isArray(id) ? id[0] : id;
+  if (!idStr || isNaN(Number(idStr))) {
+    return res.status(400).json({ success: false, message: '无效的用户 ID' });
+  }
+  const userId = parseInt(idStr, 10);
+  const { name, email } = req.body;
+  const userIndex = users.findIndex(u => u.id === userId);
+  if (userIndex === -1) {
+    return res.status(404).json({ success: false, message: '用户不存在' });
+  }
+  users[userIndex] = { ...users[userIndex], id: userId, name, email };
+  res.json({ success: true, message: `用户 ID ${userId} 已更新`, data: users[userIndex] });
+});
+
+// 删除用户
+app.delete('/users/:id', (req: Request, res: Response) => {
+  const id = req.params.id;
+  // 先提取出确定的字符串值
+  const idStr = Array.isArray(id) ? id[0] : id;
+  if (!idStr || isNaN(Number(idStr))) {
+    return res.status(400).json({ success: false, message: '无效的用户 ID' });
+  }
+  const userId = parseInt(idStr, 10);
+  const userIndex = users.findIndex(u => u.id === userId);
+  if (userIndex === -1) {
+    return res.status(404).json({ success: false, message: '用户不存在' });
+  }
+  const deletedUser = users.splice(userIndex, 1)[0]!;
+  res.json({ success: true, message: `用户 ${deletedUser.name} 已删除`, data: deletedUser });
 });
 
 // 启动服务器
